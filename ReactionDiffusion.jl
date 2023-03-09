@@ -12,8 +12,10 @@
 
 using Plots
 using FFMPEG
+using AlgebraicPetri
 
 struct ReactionDiffusion
+    network::AlgebraicPetri
     D_A::Float64
     D_B::Float64
     dt::Float64 #timestep
@@ -25,10 +27,10 @@ struct ReactionDiffusion
 
     grid_A::Matrix{Float64}
     grid_B::Matrix{Float64}
-    grid_T::Matrix{Float64}
+    #grid_T::Matrix{Float64}
 end
 
-function evolve(model::ReactionDiffusion) 
+function evolve(model::ReactionDiffusion; thermophoresis=false) 
     ΔA_d = model.dt * diffuse(model.grid_A, model.D_A)
     ΔB_d = model.dt * diffuse(model.grid_B, model.D_B)
     ΔA_r, ΔB_r = react(model)
@@ -44,7 +46,7 @@ function diffuse(grid, d)
     d*(uxx + uyy)
 end
 
-function soretDiffusion(χ_grid, T_grid, d, d_T)
+function soretDiffuse(χ_grid, T_grid, d, d_T)
     uxx = (circshift(χ_grid,(0,-1))+circshift(χ_grid,(0,1))-2*χ_grid)
     uyy = (circshift(χ_grid,(-1,0))+circshift(χ_grid,(1,0))-2*χ_grid)
 
@@ -64,7 +66,7 @@ function react(model)
     Δ_f - Δ_r, Δ_r - Δ_k
 end
 
-function simulate(D, dt, f, k, grid_size, steps; random_seed=false, seed_size=5) 
+function simulate(D, dt, f, k, grid_size, steps; random_seed=false, seed_size=5, thermophroresis=false) 
     mid = Int(ceil(grid_size/2))
     grid_A = ones(grid_size, grid_size)
     grid_B = zeros(grid_size, grid_size)
@@ -82,7 +84,7 @@ function simulate(D, dt, f, k, grid_size, steps; random_seed=false, seed_size=5)
     model = ReactionDiffusion(2*D, D, dt, f, k, 1, grid_size, grid_A, grid_B)
     
     for i in 1:steps
-        evolve(model)
+        thermophoresis ? evolve(model, thermophoresis=true) : evolve(model)  
         heatdata = model.grid_B ./ (model.grid_A + model.grid_B) 
         hm = heatmap(x=1:grid_size, y=1:grid_size, heatdata, c = cgrad(:thermal))
         frame(anim, hm)
@@ -103,5 +105,8 @@ function diffusionAnim(D, dt, size, steps)
     anim
 end
 
-anim = simulate(0.5, 0.2, 0.034, 0.095, 101, 500)
-gif(anim, "react1.gif", fps=60)
+#anim = simulate(0.5, 0.2, 0.034, 0.095, 101, 500)
+#gif(anim, "react1.gif", fps=60)
+
+feed_Petri = Open(PetriNet(
+
