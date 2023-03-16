@@ -1,3 +1,5 @@
+using AlgebraicPetri
+
 ### Predator Prey
 # B -> []  
 # [] -> A 
@@ -20,6 +22,12 @@ predatorPrey = LabelledPetriNet([:A, :B], :death=>(:B=>()), :birth=>(()=>:A), :p
 # B + X -> Y + D
 # X -> E
 
-brusselator = LabelledPetriNet([:A, :B, :D, :X, :Y, :E], :A=>:X, (:X, :X, :Y)=>(:X, :X, :X), (:B, :X)=>(:Y,:D), :X=>:E)
+brusselator = LabelledPetriNet([:A, :B, :D, :X, :Y, :E], :a=>(:A=>:X), :b=>((:X, :X, :Y)=>(:X, :X, :X)), :c=>((:B, :X)=>(:Y,:D)), :d=>(:X=>:E))
 
+### Substrate-depletive Clock
+# A -> C
+# B + C -> prod
 
+clock = LabelledPetriNet([:A, :B, :C], :a=>(:A=>:C), :b=>((:B, :C)=>()))
+
+simplest = LabelledPetriNet([:A, :B], :fwd=>(:A=>:B), :rev=>(:B=>:A))
